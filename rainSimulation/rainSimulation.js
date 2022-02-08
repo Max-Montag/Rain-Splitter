@@ -1,35 +1,37 @@
 class RainSimulationEnv{
-    constructor(wrapperID, backgroundColor, dropAmount, heaviness){ 
-        this.frameRate = 30;
+    constructor(wrapperID, settings){ 
+        this.frameRate = (settings.frameRate) ? settings.frameRate : 60;
         this.wrapperID = wrapperID;
-        this.backgroundColor = backgroundColor; // 0 <= backgroundColor < 256
-        this.p5Obj = null;
+        this.backgroundColor = (settings.backgroundColor) ? settings.backgroundColor : 50; // 0 <= backgroundColor < 256
+        this.p = null;
         this.canvas = null;
 
-        this.dropAmount = dropAmount;
-        this.heaviness = ( heaviness > 100 ) ? 100 : heaviness; // 0 < heaviness < 100; drops per second
+        this.dropAmount = (settings.dropAmount) ? settings.dropAmount : 20;
+        this.speed = (settings.speed) ? settings.speed : 10;
+        this.minLength = (settings.minLength) ? settings.minLength : 20;
+        this.lenSpread = (settings.lenSpread) ? settings.lenSpread : 20;
+        this.rainColor = (settings.rainColor) ? settings.rainColor : 240;
         this.raindrops = [];
+        this.umbrella = new umbrella(this, 200);
     }
 
     getwrapperID(){ return this.wrapperID }
 
     // connect p5 instance
-    setP5(p){ this.p5Obj = p }
+    setP5(p){
+        this.p = p;
+    }
 
     // connect canvas
     setCanvas(canvas){ this.canvas = canvas }
 
     getRaindrops(){ return this.raindrops }
 
+    getUmbrella(){ return this.umbrella }
+
     getFrameRate(){ return this.frameRate }
 
     getBackgroundColor(){ return this.backgroundColor }
-
-    getTime(){ 
-
-        // return current time based on canvas age
-        return this.p5Obj.millis()
-    }
 
     getWidth(){
         return this.canvas.width;
@@ -43,60 +45,64 @@ class RainSimulationEnv{
     randomDrop(){
         return new rainDrop(
             this, // pass this environment to the raindrop
-            this.p5Obj.millis(),
-            Math.random() * 100, // length
+            this.minLength + Math.random() * this.lenSpread, // length
             Math.random() * this.canvas.width, // x position
-            - ( Math.random() * 300 ) - 100, // y position
-            Math.random() * 100, // speed
+            - (Math.random() * this.canvas.height), // y position
+            this.speed // speed
         );
     }
 
     rain(){
-
-        // counter for interation over the drop array
-        var dropIndex = 0;
-
         // fill array initialy
         while(this.raindrops.length < this.dropAmount)
             this.raindrops.push(this.randomDrop())
-
-            /*
-        setInterval(() => {
-            
-            dropIndex++; // increment each timestep
-
-            if(dropIndex > this.dropAmount)
-                dropIndex = 0;
-
-            // generate random raindrop
-            this.raindrops[dropIndex] = this.randomDrop();
-            
-        }, 1100 - (this.heaviness * 100) );
-        */
     }
 
 }
 
 class rainDrop{
-    constructor(env, born, length, x, y, speed){
+    constructor(env, length, x, y, speed){
         this.env = env;
-        this.born = born; // timestamp of creation
         this.length = length;
         this.pos = { 'x': x, 'y': y }; 
         this.speed = speed;
     }
 
-    getX(){ 
-        return this.pos.x; 
-    }
+    getPos(){
+        let x = this.pos.x;
+        let y = this.pos.y + this.speed;
 
-    getY(){ 
-        return ( ( this.env.getTime() - this.born ) * this.speed + this.pos.y ) % this.env.getHeight();
+        // check if bottom has been reached
+        if( y > this.env.getHeight() ||
+            (y + this.length > this.env.getUmbrella().getY() && //check if umbrella was hit
+             x > this.env.getUmbrella().getX1() &&
+             x < this.env.getUmbrella().getX2() )) {
+
+            // set raindrop to top
+            x = Math.random() * this.env.getWidth();
+            y = - (Math.random() * this.env.getHeight());
+        }
+
+        // update pos
+        this.pos = { 'x': x, 'y': y }
+
+        return this.pos;
     }
 
     getLength(){
         return this.length;
     }
+}
+
+class umbrella{
+    constructor(env, width) {
+        this.env = env
+        this.width = width;
+    }
+
+    getX1(){ return this.env.p.mouseX - this.width / 2}
+    getX2(){ return this.env.p.mouseX + this.width / 2}
+    getY(){ return this.env.p.mouseY }
 }
 
 function rainSimulationCanvas(env) {
@@ -112,6 +118,9 @@ function rainSimulationCanvas(env) {
 
         // run once
         p.setup = function () {
+
+            //hide cursor
+            p.noCursor();
 
             // create new canvas - fill wrapper
             canvas = p.createCanvas(
@@ -133,20 +142,23 @@ function rainSimulationCanvas(env) {
             // draw background
             p.background(env.getBackgroundColor());
 
-            p.fill(255);
+            p.fill(env.rainColor);
 
             // draw raindrops
-            for(let drop of env.getRaindrops()){
-                console.log(drop.getY())
+            for(let drop of env.getRaindrops()) {
+                let pos = drop.getPos();
+
+                // noisy line color
+                p.stroke(env.rainColor /*+ env.p.noise(pos.y) */);
 
                 // draw raindrop
-                p.line(drop.getX(), drop.getY(), drop.getX(), drop.getY()  + drop.getLength())
+                p.line(pos.x, pos.y, pos.x, pos.y + drop.getLength());
             }
 
-            // draw cursor for testing
-            p.ellipse(p.mouseX, p.mouseY, 40, 40);
+            // draw umbrella line
+            p.line(p.mouseX - 100, p.mouseY, p.mouseX + 100, p.mouseY);
 
         }
-    }, 'rainSimulation-wrapper'); // attach to DOM
+    }, env.getwrapperID()); // TODO
     
 }

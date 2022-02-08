@@ -1,9 +1,15 @@
  // create environment
 const rainEnv = new RainSimulationEnv(
-    'rainSimulation-wrapper', // wrapper id
-    50, // 0 <= backgroundColor < 256
-    20, // drop amount
-    1 // heaviness (drops per second)
+    wrapperID = 'rainSimulation-wrapper', 
+    settings = {
+        'backgroundColor': 50,
+        'rainColor': 250,
+        'dropAmount': 40,
+        'heaviness': 10,
+        'speed': 10,
+        'minLength': 10,
+        'lenSpread': 30
+    }
 )
 
 
@@ -12,7 +18,7 @@ rainSimulationCanvas(rainEnv);
 
 setTimeout(()=>{
 
-// start raining
-rainEnv.rain();
+    // start raining
+    rainEnv.rain();
 
 }, 2000);
