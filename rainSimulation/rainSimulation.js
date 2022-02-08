@@ -47,7 +47,7 @@ class RainSimulationEnv{
             this.minLength + Math.random() * this.lenSpread, // length
             Math.random() * this.canvas.width, // x position
             - (Math.random() * this.canvas.height), // y position
-            this.speed + (Math.random() * this.speedSpread)// speed
+            this.speed + (Math.random() * this.speedSpread) // speed
         );
     }
 
