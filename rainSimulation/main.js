@@ -4,11 +4,10 @@ const rainEnv = new RainSimulationEnv(
     settings = {
         'backgroundColor': 50,
         'rainColor': 250,
-        'dropAmount': 40,
-        'heaviness': 10,
-        'speed': 10,
-        'minLength': 10,
-        'lenSpread': 30
+        'dropAmount': 60,
+        'speed': 15,
+        'minLength': 5,
+        'lenSpread': 15
     }
 )
 
