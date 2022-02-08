@@ -14,11 +14,16 @@ class RainSimulationEnv{
         this.minLength = settings.minLength ||20;
         this.lenSpread = settings.lenSpread || 20;
         this.rainColor = settings.rainColor || 100;
-        this.umbrellaColor = settings.umbrellaColor || 240;
-        this.umbrellaSize = settings.umbrellaSize || 100;
         this.raindrops = [];
-        this.umbrella = new umbrella(this, this.umbrellaSize);
         this.randomize = settings.randomize || true;
+
+        this.plainRain = settings.plainRain || false;
+
+        if(!this.plainRain){
+            this.umbrellaColor = settings.umbrellaColor || 240;
+            this.umbrellaSize = settings.umbrellaSize || 100;
+            this.umbrella = new umbrella(this, this.umbrellaSize);
+        }
     }
 
     // connect p5 instance
@@ -94,7 +99,7 @@ class rainDrop{
         let y = this.pos.y + this.speed;
 
         // check if bottom has been reached
-        if( y > this.env.getHeight() ||
+        if( y > this.env.getHeight() || !this.env.plainRain &&
             (y + this.length > this.env.umbrella.getY() && //check if umbrella was hit
              y + this.length < this.env.umbrella.getY() + this.env.umbrella.stickLength &&
              x > this.env.umbrella.getX1() &&
@@ -145,7 +150,8 @@ function rainSimulationCanvas(env) {
         p.setup = function () {
 
             //hide cursor
-            p.noCursor();
+            if(!env.plainRain)
+                p.noCursor();
 
             // create new canvas - fill wrapper
             canvas = p.createCanvas(
@@ -180,22 +186,24 @@ function rainSimulationCanvas(env) {
                 p.line(pos.x, pos.y, pos.x, pos.y + drop.getLength());
             }
 
-            // switch to umbrella color
-            p.stroke(0);
-            p.fill(env.umbrellaColor);
-            p.strokeWeight(1);
+            // draw additional elements
+            if(!env.plainRain){
+                // switch to umbrella color
+                p.stroke(0);
+                p.fill(env.umbrellaColor);
+                p.strokeWeight(1);
 
-            // draw umbrella
-            p.arc(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.width, env.umbrella.width, p.PI , p.PI * 2,  p.PIE);
+                // draw umbrella
+                p.arc(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.width, env.umbrella.width, p.PI , p.PI * 2,  p.PIE);
 
-            // draw umbrella stick
-            p.line(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.getX(), env.umbrella.getY() + env.umbrella.stickLength);
+                // draw umbrella stick
+                p.line(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.getX(), env.umbrella.getY() + env.umbrella.stickLength);
 
-            // draw umbrella handle
-            p.noFill();
-            p.arc(env.umbrella.getX() - env.umbrella.handleRadius / 2, env.umbrella.getY() + env.umbrella.stickLength,
-            env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
-
+                // draw umbrella handle
+                p.noFill();
+                p.arc(env.umbrella.getX() - env.umbrella.handleRadius / 2, env.umbrella.getY() + env.umbrella.stickLength,
+                env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
+            }
         }
     }, env.wrapperID); // attach to DOM
 

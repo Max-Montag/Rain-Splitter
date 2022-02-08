@@ -7,7 +7,8 @@ const rainEnv = new RainSimulationEnv(
         'speed': 15,
         'speedSpread': 5,
         'minLength': 5,
-        'lenSpread': 20
+        'lenSpread': 20,
+        'plainRain': false // draw just rain and no other components
     }
 )
 
