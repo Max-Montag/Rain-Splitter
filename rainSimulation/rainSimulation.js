@@ -1,5 +1,5 @@
 class RainSimulationEnv{
-    constructor(wrapperID, settings){ 
+    constructor(wrapperID, settings, randomize = true){ 
         this.frameRate = settings.frameRate || 60;
         this.wrapperID = wrapperID;
         this.backgroundColor = settings.backgroundColor || 50; // 0 <= backgroundColor < 256
@@ -8,14 +8,16 @@ class RainSimulationEnv{
 
         this.dropAmount = settings.dropAmount || 20;
         this.speed = settings.speed || 10;
+        this.xSpeed = settings.xSpeed || 4;
         this.speedSpread = settings.speedSpread || 15;
-        this.thikness = settings.thikness || 2;
+        this.thikness = settings.thikness || 1;
         this.minLength = settings.minLength ||20;
         this.lenSpread = settings.lenSpread || 20;
         this.rainColor = settings.rainColor || 100;
         this.umbrellaColor = settings.umbrellaColor || 240;
         this.raindrops = [];
         this.umbrella = new umbrella(this, 200);
+        this.randomize = settings.randomize || true;
     }
 
     // connect p5 instance
@@ -47,6 +49,29 @@ class RainSimulationEnv{
         // fill array initialy
         while(this.raindrops.length < this.dropAmount)
             this.raindrops.push(this.randomDrop())
+
+        // randomize environment values
+        /* TODO 
+        if(this.randomize){
+
+            let randomSeed = 0;
+
+            setInterval(()=>{
+
+                // inkecrement random seed
+                randomSeed += 0.01;
+                let noise = this.p.noise(randomSeed) - 0.5;
+
+                console.log(noise)
+
+                // randomize
+                this.dropAmount = this.dropAmount + noise;
+                this.speed = this.speed + noise;
+                this.xSpeed = this.xSpeed + noise;
+
+            }, 100); // randomize rate
+        }
+        */
     }
 
     resizeCanvas() {
@@ -64,12 +89,13 @@ class rainDrop{
     }
 
     getPos(){
-        let x = this.pos.x;
+        let x = this.pos.x + this.env.xSpeed;
         let y = this.pos.y + this.speed;
 
         // check if bottom has been reached
         if( y > this.env.getHeight() ||
             (y + this.length > this.env.umbrella.getY() && //check if umbrella was hit
+             y + this.length < this.env.umbrella.getY() + this.env.umbrella.stickLength &&
              x > this.env.umbrella.getX1() &&
              x < this.env.umbrella.getX2() )) {
 
@@ -154,7 +180,7 @@ function rainSimulationCanvas(env) {
             }
 
             // switch to umbrella color
-            p.stroke(env.umbrellaColor);
+            p.stroke(0);
             p.fill(env.umbrellaColor);
             p.strokeWeight(1);
 
@@ -170,7 +196,7 @@ function rainSimulationCanvas(env) {
             env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
 
         }
-    }, env.wrapperID); // TODO
+    }, env.wrapperID); // attach to DOM
 
     // handle resizeEvents -> resize canvas to fill wrapper
     document.getElementById(env.wrapperID).onresize = function() {
