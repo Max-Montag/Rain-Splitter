@@ -10,13 +10,14 @@ class RainSimulationEnv{
         this.speed = settings.speed || 10;
         this.xSpeed = settings.xSpeed || 4;
         this.speedSpread = settings.speedSpread || 15;
-        this.thikness = settings.thikness || 1;
+        this.thickness = settings.thickness || 1;
         this.minLength = settings.minLength ||20;
         this.lenSpread = settings.lenSpread || 20;
         this.rainColor = settings.rainColor || 100;
         this.umbrellaColor = settings.umbrellaColor || 240;
+        this.umbrellaSize = settings.umbrellaSize || 100;
         this.raindrops = [];
-        this.umbrella = new umbrella(this, 200);
+        this.umbrella = new umbrella(this, this.umbrellaSize);
         this.randomize = settings.randomize || true;
     }
 
@@ -116,7 +117,7 @@ class rainDrop{
 }
 
 class umbrella{
-    constructor(env, width, stickLength = 100, handleRadius = 15) {
+    constructor(env, width, stickLength = width / 2, handleRadius = width / 8) {
         this.env = env
         this.width = width;
         this.stickLength = stickLength;
@@ -165,8 +166,8 @@ function rainSimulationCanvas(env) {
             // draw background
             p.background(env.backgroundColor);
 
-            // switch to rain thikness
-            p.strokeWeight(env.thikness);
+            // switch to rain thickness
+            p.strokeWeight(env.thickness);
 
             // draw raindrops
             for(let drop of env.raindrops) {
