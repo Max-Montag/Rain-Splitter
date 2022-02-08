@@ -1,21 +1,22 @@
 class RainSimulationEnv{
     constructor(wrapperID, settings){ 
-        this.frameRate = (settings.frameRate) ? settings.frameRate : 60;
+        this.frameRate = settings.frameRate || 60;
         this.wrapperID = wrapperID;
-        this.backgroundColor = (settings.backgroundColor) ? settings.backgroundColor : 50; // 0 <= backgroundColor < 256
+        this.backgroundColor = settings.backgroundColor || 50; // 0 <= backgroundColor < 256
         this.p = null;
         this.canvas = null;
 
-        this.dropAmount = (settings.dropAmount) ? settings.dropAmount : 20;
-        this.speed = (settings.speed) ? settings.speed : 10;
-        this.minLength = (settings.minLength) ? settings.minLength : 20;
-        this.lenSpread = (settings.lenSpread) ? settings.lenSpread : 20;
-        this.rainColor = (settings.rainColor) ? settings.rainColor : 240;
+        this.dropAmount = settings.dropAmount || 20;
+        this.speed = settings.speed || 10;
+        this.speedSpread = settings.speedSpread || 15;
+        this.thikness = settings.thikness || 2;
+        this.minLength = settings.minLength ||20;
+        this.lenSpread = settings.lenSpread || 20;
+        this.rainColor = settings.rainColor || 100;
+        this.umbrellaColor = settings.umbrellaColor || 240;
         this.raindrops = [];
         this.umbrella = new umbrella(this, 200);
     }
-
-    getwrapperID(){ return this.wrapperID }
 
     // connect p5 instance
     setP5(p){
@@ -25,21 +26,11 @@ class RainSimulationEnv{
     // connect canvas
     setCanvas(canvas){ this.canvas = canvas }
 
-    getRaindrops(){ return this.raindrops }
+    // get Canvas width
+    getWidth(){ return this.canvas.width }
 
-    getUmbrella(){ return this.umbrella }
-
-    getFrameRate(){ return this.frameRate }
-
-    getBackgroundColor(){ return this.backgroundColor }
-
-    getWidth(){
-        return this.canvas.width;
-    }
-
-    getHeight(){
-        return this.canvas.height;
-    }
+    // get Canvas height
+    getHeight(){ return this.canvas.height }
 
     // create a random raindrop
     randomDrop(){
@@ -48,7 +39,7 @@ class RainSimulationEnv{
             this.minLength + Math.random() * this.lenSpread, // length
             Math.random() * this.canvas.width, // x position
             - (Math.random() * this.canvas.height), // y position
-            this.speed + (Math.random() * 10)// speed
+            this.speed + (Math.random() * this.speedSpread)// speed
         );
     }
 
@@ -56,6 +47,10 @@ class RainSimulationEnv{
         // fill array initialy
         while(this.raindrops.length < this.dropAmount)
             this.raindrops.push(this.randomDrop())
+    }
+
+    resizeCanvas() {
+        this.p.resizeCanvas(document.getElementById(this.wrapperID).clientWidth, document.getElementById(this.wrapperID).clientHeight);
     }
 
 }
@@ -74,9 +69,9 @@ class rainDrop{
 
         // check if bottom has been reached
         if( y > this.env.getHeight() ||
-            (y + this.length > this.env.getUmbrella().getY() && //check if umbrella was hit
-             x > this.env.getUmbrella().getX1() &&
-             x < this.env.getUmbrella().getX2() )) {
+            (y + this.length > this.env.umbrella.getY() && //check if umbrella was hit
+             x > this.env.umbrella.getX1() &&
+             x < this.env.umbrella.getX2() )) {
 
             // set raindrop to top
             x = Math.random() * this.env.getWidth();
@@ -95,20 +90,23 @@ class rainDrop{
 }
 
 class umbrella{
-    constructor(env, width) {
+    constructor(env, width, stickLength = 100, handleRadius = 15) {
         this.env = env
         this.width = width;
+        this.stickLength = stickLength;
+        this.handleRadius = handleRadius;
     }
 
-    getX1(){ return this.env.p.mouseX - this.width / 2}
-    getX2(){ return this.env.p.mouseX + this.width / 2}
+    getX(){ return this.env.p.mouseX }
+    getX1(){ return this.env.p.mouseX - this.width / 2 }
+    getX2(){ return this.env.p.mouseX + this.width / 2 }
     getY(){ return this.env.p.mouseY }
 }
 
 function rainSimulationCanvas(env) {
 
     // attach new canvas element to wrapper
-    document.getElementById(env.getwrapperID()).innerHTML = '';
+    document.getElementById(env.wrapperID).innerHTML = '';
 
     // create p5 instance
     new p5((p)=>{
@@ -124,8 +122,8 @@ function rainSimulationCanvas(env) {
 
             // create new canvas - fill wrapper
             canvas = p.createCanvas(
-                document.getElementById(env.getwrapperID()).clientWidth, 
-                document.getElementById(env.getwrapperID()).clientHeight
+                document.getElementById(env.wrapperID).clientWidth, 
+                document.getElementById(env.wrapperID).clientHeight
             );
 
             // connect to canvas
@@ -136,16 +134,16 @@ function rainSimulationCanvas(env) {
         p.draw = function () {
     
             // set FrameRate
-            p.frameRate(env.getFrameRate());
-    
+            p.frameRate(env.frameRate);
     
             // draw background
-            p.background(env.getBackgroundColor());
+            p.background(env.backgroundColor);
 
-            p.fill(env.rainColor);
+            // switch to rain thikness
+            p.strokeWeight(env.thikness);
 
             // draw raindrops
-            for(let drop of env.getRaindrops()) {
+            for(let drop of env.raindrops) {
                 let pos = drop.getPos();
 
                 // noisy line color
@@ -155,10 +153,28 @@ function rainSimulationCanvas(env) {
                 p.line(pos.x, pos.y, pos.x, pos.y + drop.getLength());
             }
 
-            // draw umbrella line
-            p.line(p.mouseX - 100, p.mouseY, p.mouseX + 100, p.mouseY);
+            // switch to umbrella color
+            p.stroke(env.umbrellaColor);
+            p.fill(env.umbrellaColor);
+            p.strokeWeight(1);
+
+            // draw umbrella
+            p.arc(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.width, env.umbrella.width, p.PI , p.PI * 2,  p.PIE);
+
+            // draw umbrella stick
+            p.line(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.getX(), env.umbrella.getY() + env.umbrella.stickLength);
+
+            // draw umbrella handle
+            p.noFill();
+            p.arc(env.umbrella.getX() - env.umbrella.handleRadius / 2, env.umbrella.getY() + env.umbrella.stickLength,
+            env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
 
         }
-    }, env.getwrapperID()); // TODO
+    }, env.wrapperID); // TODO
+
+    // handle resizeEvents -> resize canvas to fill wrapper
+    document.getElementById(env.wrapperID).onresize = function() {
+        canvasManager.resizeCanvas(document.getElementById(env.wrapperID).clientWidth, document.getElementById(env.wrapperID).clientHeight);
+    };
     
 }
