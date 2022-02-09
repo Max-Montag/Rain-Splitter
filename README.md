@@ -2,7 +2,7 @@
 
 > a litte game involving heavy rain
 
-https://max-montag.github.io/rain-splitter/
+https://max-montag.github.io/Rain-Splitter/
 
 ## License
 
