@@ -1,6 +1,6 @@
 # Rain Splitter
 
-> a litte game involving heavy rain
+> A simple game involving heavy rain...
 
 https://max-montag.github.io/Rain-Splitter/
 
