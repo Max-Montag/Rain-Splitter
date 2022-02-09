@@ -83,7 +83,9 @@ class RainSimulationEnv{
     // reset game objects (player has died)
     reset(){
         this.umbrella.resize();
+
         this.avatar.pos.x = this.avatarWidth / 2;
+        this.avatar.speed = 0;
         this.avatar.speed = this.avatarSpeed;
     }
 

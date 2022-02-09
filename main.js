@@ -3,7 +3,7 @@ const rainEnv = new RainSimulationEnv(
     wrapperID = 'rainSimulation-wrapper', 
     settings = {
         'backgroundColor': 50,
-        'dropAmount': 700,
+        'dropAmount': 0.2,
         'speed': 15,
         'speedSpread': 5,
         'minLength': 5,
