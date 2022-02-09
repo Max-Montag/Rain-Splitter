@@ -1,5 +1,5 @@
 class RainSimulationEnv{
-    constructor(wrapperID, settings, randomize = true){ 
+    constructor(wrapperID, settings){ 
         this.frameRate = settings.frameRate || 60;
         this.wrapperID = wrapperID;
         this.backgroundColor = settings.backgroundColor || 50; // 0 <= backgroundColor < 256
@@ -7,7 +7,7 @@ class RainSimulationEnv{
         this.canvas = null;
 
         this.dropAmount = settings.dropAmount || 20;
-        this.speed = settings.speed || 10;
+        this.speed = settings.speed || 15;
         this.xSpeed = settings.xSpeed || 4;
         this.speedSpread = settings.speedSpread || 15;
         this.thickness = settings.thickness || 1;
@@ -16,20 +16,8 @@ class RainSimulationEnv{
         this.rainColor = settings.rainColor || 100;
         this.rainNoiseStep = settings.rainNoiseStep || 0.2;
         this.rainNoiseFactor = settings.rainNoiseFactor || 0.2;
-        this.randomize = settings.randomize || true;
-        this.plainRain = settings.plainRain || false;
-        this.raindrops = [];
-
         this.noiseSeed = 0;
-
-        if(!this.plainRain){
-            this.umbrellaColor = settings.umbrellaColor || 70;
-            this.umbrellaSize = settings.umbrellaSize || 200;
-            this.avatarColor = settings.avatarColor || 240;
-            this.avatarWidth = settings.avatarWidth || 40;
-            this.avatarHeight = settings.avatarHeight || 80;
-            this.avatarSpeed = settings.avatarSpeed || 5;
-        }
+        this.raindrops = [];
     }
 
     // connect p5 instance
@@ -39,19 +27,15 @@ class RainSimulationEnv{
 
     setCanvas(canvas){ 
 
-        // connect canvas
+        // connect environment to canvas
         this.canvas = canvas;
 
         // add raindrops
-        while(this.raindrops.length < this.dropAmount)
-            this.raindrops.push(this.randomDrop())
-
-        // init avatar & umbrella
-        if(!this.plainRain){
-            this.avatar = new Avatar (this, this.avatarWidth, this.avatarHeight, this.avatarSpeed);
-            this.umbrella = new Umbrella(this, this.umbrellaSize);
+        while(this.raindrops.length < this.dropAmount){
+            let drop = new RainDrop(this);
+            this.raindrops.push(drop);
         }
-            
+
     }
 
     // get Canvas width
@@ -79,8 +63,10 @@ class RainSimulationEnv{
     }
 
     wind(){
-        this.noiseSeed += this.rainNoiseStep;
-        this.xSpeed = (this.p.noise(this.xSpeed + this.noiseSeed) - 0.5) * this.rainNoiseFactor;
+        if(this.rainNoiseFactor > 0){
+            this.noiseSeed += this.rainNoiseStep;
+            this.xSpeed = (this.p.noise(this.noiseSeed) - 0.5) * this.rainNoiseFactor;
+        }
     }
 
     resizeCanvas() {
@@ -89,21 +75,18 @@ class RainSimulationEnv{
 }
 
 class RainDrop{
-    constructor(env, length, x, y, speed){
+    constructor(env){
         this.env = env;
-        this.length = length;
-        this.pos = { 'x': x, 'y': y }; 
-        this.speed = speed;
+        this.length = this.env.minLength + Math.random() * this.env.lenSpread;
+        this.pos = { 'x': 0, 'y': 0 }; 
+        this.speed = this.env.speed + (Math.random() * this.env.speedSpread);
+        this.updatePos(true);
     }
 
-    updatePos(){
-
-        // change position based on speed
-        this.pos.x += this.env.xSpeed;
-        this.pos.y += this.speed;
+    updatePos(init = false){
 
         // check if bottom has been reached or umbrella has been hit
-        if(this.pos.y > this.env.getHeight() || !this.env.plainRain &&
+        if(init || this.pos.y > this.env.getHeight() || !this.env.plainRain &&
             (this.pos.y + this.length > this.env.umbrella.getY() && 
             this.pos.y + this.length < this.env.umbrella.getY() + this.env.umbrella.stickLength &&
             this.pos.x > this.env.umbrella.getX() - this.env.umbrella.width / 2 &&
@@ -116,6 +99,10 @@ class RainDrop{
             this.pos.x = (Math.random() * (this.env.getWidth() + (2 * windRange))) - windRange;
             this.pos.y = - (Math.random() * this.env.getHeight());
 
+        }else{
+             // change position based on speed
+            this.pos.x += this.env.xSpeed;
+            this.pos.y += this.speed;
         }
 
         // check if avatar was hit
@@ -274,8 +261,8 @@ function rainSimulationCanvas(env) {
     }, env.wrapperID); // attach to DOM
 
     // handle resizeEvents -> resize canvas to fill wrapper
-    document.getElementById(env.wrapperID).onresize = function() {
-        canvasManager.resizeCanvas(document.getElementById(env.wrapperID).clientWidth, document.getElementById(env.wrapperID).clientHeight);
+    document.body.onresize = function() {
+        env.resizeCanvas(document.getElementById(env.wrapperID).clientWidth, document.getElementById(env.wrapperID).clientHeight);
     };
     
 }
