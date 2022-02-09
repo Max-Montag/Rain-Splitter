@@ -137,6 +137,7 @@ class Umbrella{
         this.resize()
     }
 
+    // resize (shrink for level up)
     resize(factor = 1){
         if(this.width * factor > this.env.avatar.width * 4){
             this.width = (factor == 1) ? this.width = this.env.umbrellaSize : this.width * factor;
