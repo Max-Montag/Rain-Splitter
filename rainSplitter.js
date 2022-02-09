@@ -54,7 +54,7 @@ class RainSimulationEnv{
         this.raindrops = [];
 
         // find correct amount for users screen ratio
-        let dropAmount = Math.sqrt(this.getWidth() * this.getHeight() / 1000000) * this.dropAmount;
+        let dropAmount = this.getWidth() * this.getHeight() / 1000 * this.dropAmount;
 
         // add raindrops
         while(this.raindrops.length < dropAmount){
