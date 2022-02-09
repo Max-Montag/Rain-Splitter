@@ -40,15 +40,26 @@ class RainSimulationEnv{
         this.canvas = canvas;
 
         // add raindrops
-        while(this.raindrops.length < this.dropAmount){
-            let drop = new RainDrop(this);
-            this.raindrops.push(drop);
-        }
+        this.initDrops();
 
         // init avatar & umbrella
         if(!this.plainRain){
             this.avatar = new Avatar (this, this.avatarWidth, this.avatarHeight, this.avatarSpeed);
             this.umbrella = new Umbrella(this, this.umbrellaSize);
+        }
+    }
+
+    initDrops(){
+
+        this.raindrops = [];
+
+        // find correct amount for users screen ratio
+        let dropAmount = Math.sqrt(this.getWidth() * this.getHeight() / 1000000) * this.dropAmount;
+
+        // add raindrops
+        while(this.raindrops.length < dropAmount){
+            let drop = new RainDrop(this);
+            this.raindrops.push(drop);
         }
     }
 
@@ -294,10 +305,17 @@ function rainSimulationCanvas(env) {
         }
     }, env.wrapperID); // attach to DOM
 
-    // handle resizeEvents -> resize canvas to fill wrapper
+    // handle resizeEvents -> 
     document.body.onresize = function() {
+
+        // resize canvas to fill wrapper
         env.resizeCanvas(document.getElementById(env.wrapperID).clientWidth, document.getElementById(env.wrapperID).clientHeight);
+
+        // put avatar to correct pos
         env.avatar.pos = {'x': env.avatar.width / 2, 'y': env.getHeight() - env.avatar.height};
+
+        // adjust amount of raindrops
+        env.initDrops();
     };
     
 }
