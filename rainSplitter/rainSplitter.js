@@ -237,7 +237,7 @@ function rainSimulationCanvas(env) {
                 drop.updatePos();
 
                 // noisy line color
-                p.stroke(env.rainColor /*+ env.p.noise(pos.y) */);
+                p.stroke(env.rainColor);
 
                 // draw raindrop
                 p.line(drop.pos.x, drop.pos.y, drop.pos.x, drop.pos.y + drop.length);
