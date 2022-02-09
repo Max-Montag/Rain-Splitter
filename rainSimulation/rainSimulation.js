@@ -14,15 +14,21 @@ class RainSimulationEnv{
         this.minLength = settings.minLength ||20;
         this.lenSpread = settings.lenSpread || 20;
         this.rainColor = settings.rainColor || 100;
-        this.raindrops = [];
+        this.rainNoiseStep = settings.rainNoiseStep || 0.2;
+        this.rainNoiseFactor = settings.rainNoiseFactor || 0.2;
         this.randomize = settings.randomize || true;
-
         this.plainRain = settings.plainRain || false;
+        this.raindrops = [];
+
+        this.noiseSeed = 0;
 
         if(!this.plainRain){
-            this.umbrellaColor = settings.umbrellaColor || 240;
-            this.umbrellaSize = settings.umbrellaSize || 100;
-            this.umbrella = new umbrella(this, this.umbrellaSize);
+            this.umbrellaColor = settings.umbrellaColor || 70;
+            this.umbrellaSize = settings.umbrellaSize || 200;
+            this.avatarColor = settings.avatarColor || 240;
+            this.avatarWidth = settings.avatarWidth || 40;
+            this.avatarHeight = settings.avatarHeight || 80;
+            this.avatarSpeed = settings.avatarSpeed || 5;
         }
     }
 
@@ -31,8 +37,22 @@ class RainSimulationEnv{
         this.p = p;
     }
 
-    // connect canvas
-    setCanvas(canvas){ this.canvas = canvas }
+    setCanvas(canvas){ 
+
+        // connect canvas
+        this.canvas = canvas;
+
+        // add raindrops
+        while(this.raindrops.length < this.dropAmount)
+            this.raindrops.push(this.randomDrop())
+
+        // init avatar & umbrella
+        if(!this.plainRain){
+            this.avatar = new Avatar (this, this.avatarWidth, this.avatarHeight, this.avatarSpeed);
+            this.umbrella = new Umbrella(this, this.umbrellaSize);
+        }
+            
+    }
 
     // get Canvas width
     getWidth(){ return this.canvas.width }
@@ -42,7 +62,7 @@ class RainSimulationEnv{
 
     // create a random raindrop
     randomDrop(){
-        return new rainDrop(
+        return new RainDrop(
             this, // pass this environment to the raindrop
             this.minLength + Math.random() * this.lenSpread, // length
             Math.random() * this.canvas.width, // x position
@@ -51,42 +71,24 @@ class RainSimulationEnv{
         );
     }
 
-    rain(){
-        // fill array initialy
-        while(this.raindrops.length < this.dropAmount)
-            this.raindrops.push(this.randomDrop())
+    // reset game objects (player has died)
+    reset(){
+        this.umbrella.resize();
+        this.avatar.pos.x = this.avatarWidth / 2;
+        this.avatar.speed = this.avatarSpeed;
+    }
 
-        // randomize environment values
-        /* TODO 
-        if(this.randomize){
-
-            let randomSeed = 0;
-
-            setInterval(()=>{
-
-                // inkecrement random seed
-                randomSeed += 0.01;
-                let noise = this.p.noise(randomSeed) - 0.5;
-
-                console.log(noise)
-
-                // randomize
-                this.dropAmount = this.dropAmount + noise;
-                this.speed = this.speed + noise;
-                this.xSpeed = this.xSpeed + noise;
-
-            }, 100); // randomize rate
-        }
-        */
+    wind(){
+        this.noiseSeed += this.rainNoiseStep;
+        this.xSpeed = (this.p.noise(this.xSpeed + this.noiseSeed) - 0.5) * this.rainNoiseFactor;
     }
 
     resizeCanvas() {
         this.p.resizeCanvas(document.getElementById(this.wrapperID).clientWidth, document.getElementById(this.wrapperID).clientHeight);
     }
-
 }
 
-class rainDrop{
+class RainDrop{
     constructor(env, length, x, y, speed){
         this.env = env;
         this.length = length;
@@ -94,45 +96,91 @@ class rainDrop{
         this.speed = speed;
     }
 
-    getPos(){
-        let x = this.pos.x + this.env.xSpeed;
-        let y = this.pos.y + this.speed;
+    updatePos(){
 
-        // check if bottom has been reached
-        if( y > this.env.getHeight() || !this.env.plainRain &&
-            (y + this.length > this.env.umbrella.getY() && //check if umbrella was hit
-             y + this.length < this.env.umbrella.getY() + this.env.umbrella.stickLength &&
-             x > this.env.umbrella.getX1() &&
-             x < this.env.umbrella.getX2() )) {
+        // change position based on speed
+        this.pos.x += this.env.xSpeed;
+        this.pos.y += this.speed;
 
-            // set raindrop to top
-            x = Math.random() * this.env.getWidth();
-            y = - (Math.random() * this.env.getHeight());
+        // check if bottom has been reached or umbrella has been hit
+        if(this.pos.y > this.env.getHeight() || !this.env.plainRain &&
+            (this.pos.y + this.length > this.env.umbrella.getY() && 
+            this.pos.y + this.length < this.env.umbrella.getY() + this.env.umbrella.stickLength &&
+            this.pos.x > this.env.umbrella.getX() - this.env.umbrella.width / 2 &&
+            this.pos.x < this.env.umbrella.getX() + this.env.umbrella.width / 2)) {
+
+            // increase x-range based on xSpeed (wind) -> make sure it rains everywhere
+            let windRange =  (this.env.getHeight() / this.env.speed) * this.env.speed;
+
+            // set raindrop to random position in top offset
+            this.pos.x = (Math.random() * (this.env.getWidth() + (2 * windRange))) - windRange;
+            this.pos.y = - (Math.random() * this.env.getHeight());
+
         }
 
-        // update pos
-        this.pos = { 'x': x, 'y': y }
-
-        return this.pos;
-    }
-
-    getLength(){
-        return this.length;
+        // check if avatar was hit
+        if(!this.env.plainRain && 
+            this.pos.y + this.length > this.env.getHeight() - this.env.avatar.height &&
+            this.pos.x > this.env.avatar.pos.x - this.env.avatar.width / 2 &&
+            this.pos.x < this.env.avatar.pos.x + this.env.avatar.width / 2){
+                this.env.avatar.hit();
+        }
     }
 }
 
-class umbrella{
-    constructor(env, width, stickLength = width / 2, handleRadius = width / 8) {
-        this.env = env
+class Umbrella{
+    constructor(env, width) {
+        this.env = env;
         this.width = width;
-        this.stickLength = stickLength;
-        this.handleRadius = handleRadius;
+        this.resize()
+    }
+
+    resize(factor = 1){
+        if(this.width * factor > this.env.avatar.width * 4){
+            this.width = (factor == 1) ? this.width = this.env.umbrellaSize : this.width * factor;
+            this.stickLength = this.width / 2;
+            this.handleRadius = this.width / 8;
+        }
     }
 
     getX(){ return this.env.p.mouseX }
-    getX1(){ return this.env.p.mouseX - this.width / 2 }
-    getX2(){ return this.env.p.mouseX + this.width / 2 }
     getY(){ return this.env.p.mouseY }
+
+}
+
+class Avatar{
+
+    constructor(env, width, height, speed){
+        this.env = env;
+        this.width = width;
+        this.height = height;
+        this.pos = {'x': this.width / 2, 'y': this.env.getHeight() - this.height};
+        this.speed = speed;
+    }
+
+    // update position based on speed
+    updatePos(){
+
+        // calc new position
+        this.pos.x = this.pos.x + this.speed;
+
+        // check for wall collision
+        if(this.pos.x + this.width / 2 >= this.env.getWidth() || // right collision
+           this.pos.x - this.width / 2 <= 0){ // left collision
+
+            // turn arround & increase speed
+            this.speed = -this.speed * 1.05;
+
+            // shrink umbrella
+            this.env.umbrella.resize(0.95);
+
+        }        
+    }
+
+    hit(){
+        this.env.reset();
+    }
+
 }
 
 function rainSimulationCanvas(env) {
@@ -150,8 +198,10 @@ function rainSimulationCanvas(env) {
         p.setup = function () {
 
             //hide cursor
-            if(!env.plainRain)
+            if(!env.plainRain){
                 p.noCursor();
+                p.rectMode(p.CENTER);
+            }
 
             // create new canvas - fill wrapper
             canvas = p.createCanvas(
@@ -161,37 +211,52 @@ function rainSimulationCanvas(env) {
 
             // connect to canvas
             env.setCanvas(canvas);
+
+            // set FrameRate
+            p.frameRate(env.frameRate);
         }
 
         // run continous (frameRate)
         p.draw = function () {
-    
-            // set FrameRate
-            p.frameRate(env.frameRate);
-    
+
             // draw background
             p.background(env.backgroundColor);
 
-            // switch to rain thickness
+            // add some random wind
+            env.wind();
+
+            // rain thickness
             p.strokeWeight(env.thickness);
 
             // draw raindrops
             for(let drop of env.raindrops) {
-                let pos = drop.getPos();
+
+                // update position of this raindrop
+                drop.updatePos();
 
                 // noisy line color
                 p.stroke(env.rainColor /*+ env.p.noise(pos.y) */);
 
                 // draw raindrop
-                p.line(pos.x, pos.y, pos.x, pos.y + drop.getLength());
+                p.line(drop.pos.x, drop.pos.y, drop.pos.x, drop.pos.y + drop.length);
             }
 
             // draw additional elements
-            if(!env.plainRain){
-                // switch to umbrella color
-                p.stroke(0);
+            if(!env.plainRain && env.canvas){
+
+                // update avatar position
+                env.avatar.updatePos();
+
+                // avatar color
+                p.fill(env.avatarColor);
+
+                // draw avatar
+                p.rect(env.avatar.pos.x, env.avatar.pos.y, env.avatar.width, env.avatar.height);
+
+                // umbrella color
                 p.fill(env.umbrellaColor);
-                p.strokeWeight(1);
+                p.stroke(0);
+                p.strokeWeight(2);
 
                 // draw umbrella
                 p.arc(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.width, env.umbrella.width, p.PI , p.PI * 2,  p.PIE);
@@ -203,6 +268,7 @@ function rainSimulationCanvas(env) {
                 p.noFill();
                 p.arc(env.umbrella.getX() - env.umbrella.handleRadius / 2, env.umbrella.getY() + env.umbrella.stickLength,
                 env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
+                
             }
         }
     }, env.wrapperID); // attach to DOM
