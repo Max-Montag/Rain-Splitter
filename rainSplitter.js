@@ -128,6 +128,15 @@ class RainDrop{
                 this.env.avatar.hit();
         }
     }
+
+    draw(){
+
+        // rain color
+        this.env.p.stroke(this.env.rainColor);
+
+        // draw raindrop
+        this.env.p.line(this.pos.x, this.pos.y, this.pos.x, this.pos.y + this.length);
+    }
 }
 
 class Umbrella{
@@ -148,6 +157,25 @@ class Umbrella{
 
     getX(){ return this.env.p.mouseX }
     getY(){ return this.env.p.mouseY }
+
+    draw(){
+
+        // umbrella color
+        this.env.p.fill(this.env.umbrellaColor);
+        this.env.p.stroke(0);
+        this.env.p.strokeWeight(2);
+
+        // draw umbrella
+        this.env.p.arc(this.env.umbrella.getX(), this.env.umbrella.getY(), this.env.umbrella.width, this.env.umbrella.width, this.env.p.PI , this.env.p.PI * 2,  this.env.p.PIE);
+
+        // draw umbrella stick
+        this.env.p.line(this.env.umbrella.getX(), this.env.umbrella.getY(), this.env.umbrella.getX(), this.env.umbrella.getY() + this.env.umbrella.stickLength);
+
+        // draw umbrella handle
+        this.env.p.noFill();
+        this.env.p.arc(this.env.umbrella.getX() - this.env.umbrella.handleRadius / 2, this.env.umbrella.getY() + this.env.umbrella.stickLength,
+        this.env.umbrella.handleRadius, this.env.umbrella.handleRadius, 0, this.env.p.PI,  this.env.p.OPEN);
+    }
 
 }
 
@@ -182,6 +210,15 @@ class Avatar{
 
     hit(){
         this.env.reset();
+    }
+
+    draw(){
+
+        // avatar color
+        this.env.p.fill(this.env.avatarColor);
+
+        // draw avatar
+        this.env.p.rect(this.env.avatar.pos.x, this.env.avatar.pos.y, this.env.avatar.width, this.env.avatar.height);
     }
 
 }
@@ -237,11 +274,8 @@ function rainSimulationCanvas(env) {
                 // update position of this raindrop
                 drop.updatePos();
 
-                // noisy line color
-                p.stroke(env.rainColor);
-
                 // draw raindrop
-                p.line(drop.pos.x, drop.pos.y, drop.pos.x, drop.pos.y + drop.length);
+                drop.draw();
             }
 
             // draw additional elements
@@ -250,27 +284,11 @@ function rainSimulationCanvas(env) {
                 // update avatar position
                 env.avatar.updatePos();
 
-                // avatar color
-                p.fill(env.avatarColor);
-
                 // draw avatar
-                p.rect(env.avatar.pos.x, env.avatar.pos.y, env.avatar.width, env.avatar.height);
-
-                // umbrella color
-                p.fill(env.umbrellaColor);
-                p.stroke(0);
-                p.strokeWeight(2);
+                env.avatar.draw();
 
                 // draw umbrella
-                p.arc(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.width, env.umbrella.width, p.PI , p.PI * 2,  p.PIE);
-
-                // draw umbrella stick
-                p.line(env.umbrella.getX(), env.umbrella.getY(), env.umbrella.getX(), env.umbrella.getY() + env.umbrella.stickLength);
-
-                // draw umbrella handle
-                p.noFill();
-                p.arc(env.umbrella.getX() - env.umbrella.handleRadius / 2, env.umbrella.getY() + env.umbrella.stickLength,
-                env.umbrella.handleRadius, env.umbrella.handleRadius, 0, p.PI,  p.OPEN);
+                env.umbrella.draw();
                 
             }
         }
