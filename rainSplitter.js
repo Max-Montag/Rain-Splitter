@@ -279,6 +279,7 @@ function rainSimulationCanvas(env) {
     // handle resizeEvents -> resize canvas to fill wrapper
     document.body.onresize = function() {
         env.resizeCanvas(document.getElementById(env.wrapperID).clientWidth, document.getElementById(env.wrapperID).clientHeight);
+        env.avatar.pos = {'x': env.avatar.width / 2, 'y': env.getHeight() - env.avatar.height};
     };
     
 }
