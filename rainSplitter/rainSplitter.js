@@ -18,6 +18,15 @@ class RainSimulationEnv{
         this.rainNoiseFactor = settings.rainNoiseFactor || 0.2;
         this.noiseSeed = 0;
         this.raindrops = [];
+
+        if(!this.plainRain){
+            this.umbrellaColor = settings.umbrellaColor || 70;
+            this.umbrellaSize = settings.umbrellaSize || 200;
+            this.avatarColor = settings.avatarColor || 240;
+            this.avatarWidth = settings.avatarWidth || 40;
+            this.avatarHeight = settings.avatarHeight || 80;
+            this.avatarSpeed = settings.avatarSpeed || 5;
+        }
     }
 
     // connect p5 instance
@@ -36,6 +45,11 @@ class RainSimulationEnv{
             this.raindrops.push(drop);
         }
 
+        // init avatar & umbrella
+        if(!this.plainRain){
+            this.avatar = new Avatar (this, this.avatarWidth, this.avatarHeight, this.avatarSpeed);
+            this.umbrella = new Umbrella(this, this.umbrellaSize);
+        }
     }
 
     // get Canvas width
@@ -85,6 +99,10 @@ class RainDrop{
 
     updatePos(init = false){
 
+        // change position based on speed
+        this.pos.x += this.env.xSpeed;
+        this.pos.y += this.speed;
+
         // check if bottom has been reached or umbrella has been hit
         if(init || this.pos.y > this.env.getHeight() || !this.env.plainRain &&
             (this.pos.y + this.length > this.env.umbrella.getY() && 
@@ -99,14 +117,11 @@ class RainDrop{
             this.pos.x = (Math.random() * (this.env.getWidth() + (2 * windRange))) - windRange;
             this.pos.y = - (Math.random() * this.env.getHeight());
 
-        }else{
-             // change position based on speed
-            this.pos.x += this.env.xSpeed;
-            this.pos.y += this.speed;
         }
 
         // check if avatar was hit
         if(!this.env.plainRain && 
+            this.env.avatar &&
             this.pos.y + this.length > this.env.getHeight() - this.env.avatar.height &&
             this.pos.x > this.env.avatar.pos.x - this.env.avatar.width / 2 &&
             this.pos.x < this.env.avatar.pos.x + this.env.avatar.width / 2){
