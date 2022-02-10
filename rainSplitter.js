@@ -23,8 +23,8 @@ class RainSimulationEnv{
             this.umbrellaColor = settings.umbrellaColor || 70;
             this.umbrellaSize = settings.umbrellaSize || 200;
             this.avatarColor = settings.avatarColor || 240;
-            this.avatarWidth = settings.avatarWidth || 40;
-            this.avatarHeight = settings.avatarHeight || 80;
+            this.avatarWidth = settings.avatarWidth || 45;
+            this.avatarHeight = settings.avatarHeight || 60;
             this.avatarSpeed = settings.avatarSpeed || 5;
         }
     }
@@ -231,7 +231,9 @@ class Avatar{
         this.env.p.fill(this.env.avatarColor);
 
         // draw avatar
-        this.env.p.rect(this.env.avatar.pos.x, this.env.avatar.pos.y, this.env.avatar.width, this.env.avatar.height);
+        //this.env.p.rect(this.env.avatar.pos.x, this.env.avatar.pos.y, this.env.avatar.width, this.env.avatar.height);
+        let skaterImg = (this.speed > 0) ? skaterRight : skaterLeft;
+        this.env.p.image(skaterImg, this.env.avatar.pos.x, this.env.avatar.pos.y, this.env.avatar.width, this.env.avatar.height);
     }
 
 }
@@ -246,6 +248,11 @@ function rainSimulationCanvas(env) {
 
         // connect to environment
         env.setP5(p);
+
+        p.preload = function() {
+            skaterRight = p.loadImage('skaterRight.svg');
+            skaterLeft = p.loadImage('skaterLeft.svg');
+        }
 
         // run once
         p.setup = function () {
